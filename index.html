@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apple Earn BD - Premium</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --primary: #FF3B30; 
+            --primary-grad: linear-gradient(135deg, #FF3B30 0%, #FF9F0A 100%);
+            --bg-dark: #000000;
+            --glass-bg: rgba(28, 28, 30, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --success: #30D158;
+            --danger: #FF453A;
+            --card-bg: #1C1C1E;
+            --gold: #FFD700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, rgba(255, 59, 48, 0.15), transparent 40%);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif; 
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bn { font-family: 'Hind Siliguri', sans-serif; }
+
+        /* --- Utilities --- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .gradient-text {
+            background: var(--primary-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .btn-main {
+            background: var(--primary-grad);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 8px 20px rgba(255, 59, 48, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-main:active { transform: scale(0.97); }
+        .btn-main:disabled { background: #333; color: #666; box-shadow: none; transform: none; }
+        .btn-check { background: var(--success); box-shadow: 0 4px 15px rgba(48, 209, 88, 0.3); }
+
+        /* --- Layout --- */
+        #app-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 100px;
+            scroll-behavior: smooth;
+        }
+        #app-content::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        .page { display: none; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .page.active { display: block; }
+
+        /* --- Header --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .user-pill { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        .wallet-badge {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* --- Leaderboard Styles (NEW) --- */
+        .rank-list { margin-top: 10px; }
+        .rank-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px; margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s;
+        }
+        
+        /* Top 3 Animation */
+        .rank-item.top-1 { 
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(0,0,0,0)); 
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            animation: pulseGold 2s infinite;
+        }
+        .rank-item.top-2 { border: 1px solid rgba(192, 192, 192, 0.3); }
+        .rank-item.top-3 { border: 1px solid rgba(205, 127, 50, 0.3); }
+
+        .rank-num {
+            width: 32px; height: 32px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-right: 12px; font-size: 0.9rem;
+            background: #2C2C2E; color: #888;
+        }
+        
+        .top-1 .rank-num { background: #FFD700; color: #000; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+        .top-2 .rank-num { background: #C0C0C0; color: #000; }
+        .top-3 .rank-num { background: #CD7F32; color: #fff; }
+
+        .rank-img { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; object-fit: cover; }
+        .top-1 .rank-img { border: 2px solid #FFD700; }
+
+        .rank-info { flex: 1; }
+        .rank-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 2px; }
+        .rank-stats { font-size: 0.75rem; color: #888; display: flex; gap: 10px; }
+        
+        .like-btn {
+            display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; padding: 5px; color: #666; transition: 0.2s;
+        }
+        .like-btn.liked { color: #FF2D55; animation: pop 0.3s ease; }
+        .like-btn i { font-size: 1.2rem; margin-bottom: 2px; }
+        .like-count { font-size: 0.7rem; }
+
+        /* --- Other Styles --- */
+        .balance-card { padding: 25px; text-align: center; position: relative; overflow: hidden; margin-bottom: 25px; }
+        .balance-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,59,48,0.1) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        .task-box { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+        .task-icon { width: 50px; height: 50px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--text-main); margin-right: 15px; }
+        .task-reward { color: var(--success); font-weight: bold; font-size: 0.9rem; background: rgba(48,209,88,0.1); padding: 2px 8px; border-radius: 6px; }
+
+        .tab-container { display: flex; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 14px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; text-align: center; border-radius: 12px; font-size: 0.9rem; color: #888; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: #fff; font-weight: 600; }
+
+        /* Notification */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; animation: slideDown 0.3s ease-out forwards; font-family: 'Hind Siliguri', sans-serif; }
+        .toast.success { border-color: var(--success); } .toast.error { border-color: var(--danger); }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-box { width: 85%; max-width: 360px; background: #1C1C1E; border-radius: 20px; padding: 25px; border: 1px solid var(--glass-border); transform: scale(0.9); transition: 0.3s; position: relative; }
+        .modal-overlay.show .modal-box { transform: scale(1); }
+        .notice-content { max-height: 50vh; overflow-y: auto; margin: 15px 0; font-size: 0.9rem; line-height: 1.6; color: #ccc; }
+
+        /* Nav */
+        .nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; height: 70px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; text-decoration: none; font-size: 0.7rem; gap: 4px; width: 50px; height: 50px; border-radius: 50%; transition: 0.3s; }
+        .nav-item i { font-size: 1.4rem; transition: 0.3s; }
+        .nav-item.active { background: var(--primary); color: white; transform: translateY(-15px); box-shadow: 0 5px 15px rgba(255, 59, 48, 0.4); }
+        .nav-item.active i { color: white; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); } }
+        @keyframes pop { 50% { transform: scale(1.4); } }
+        .loader-spin { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: rotate 1s linear infinite; }
+
+    </style>
+</head>
+<body>
+
+    <div id="appLoader" class="modal-overlay show" style="background: #000; z-index: 9999;">
+        <div style="text-align: center;">
+            <i class="fab fa-apple" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
+            <h3 class="bn" style="color: #fff;">লোডিং হচ্ছে...</h3>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="noticeModal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="text-align: center;">
+                <div style="width: 50px; height: 50px; background: rgba(255,59,48,0.1); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                    <i class="fas fa-bullhorn" style="color: var(--primary); font-size: 1.5rem;"></i>
+                </div>
+                <h3 class="bn">গুরুত্বপূর্ণ নোটিশ</h3>
+            </div>
+            <div class="notice-content bn" id="noticeText">
+                লোডিং হচ্ছে...
+            </div>
+            <button class="btn-main" onclick="closeModal('noticeModal')">ঠিক আছে, বুঝেছি</button>
+        </div>
+    </div>
+
+    <div id="adModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2rem; font-weight: bold;">
+                <span id="adTimer">15</span>
+            </div>
+            <h3 class="bn">বিজ্ঞাপন দেখা হচ্ছে...</h3>
+            <p class="bn" style="color: #888; margin-bottom: 20px;">দয়া করে পেজটি বন্ধ করবেন না।</p>
+            <button class="btn-main" style="background: transparent; border: 1px solid #FF453A; color: #FF453A;" onclick="cancelAd()">বন্ধ করুন (No Reward)</button>
+        </div>
+    </div>
+
+    <div id="app-content">
+
+        <div id="home" class="page active">
+            <div class="header">
+                <div class="user-pill">
+                    <img src="" id="userAvatar" class="user-avatar">
+                    <div>
+                        <div class="bn" style="font-size: 0.7rem; color: var(--text-muted);">স্বাগতম,</div>
+                        <div style="font-weight: 600; font-size: 1rem;" id="userName">Guest</div>
+                    </div>
+                </div>
+                <div class="wallet-badge">
+                    <i class="fas fa-coins" style="color: var(--primary);"></i>
+                    <span id="topBalance">0.00</span> ৳
+                </div>
+            </div>
+
+            <div class="balance-card glass">
+                <p class="bn" style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">আপনার বর্তমান ব্যালেন্স</p>
+                <h1 style="font-size: 2.8rem; margin: 10px 0;" class="gradient-text">৳ <span id="mainBalance">0.00</span></h1>
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px;">
+                        <small class="bn" style="color: #888;">টাস্ক আয়</small>
+                        <div style="font-weight: bold;">৳ <span id="taskIncome">0.00</span></div>
+                    </div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px;">
+                        <small class="bn" style="color: #888;">রেফার আয়</small>
+                        <div style="font-weight: bold;">৳ <span id="refIncome">0.00</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                <div class="glass" style="padding: 15px; text-align: center;" onclick="navTo('tasks')">
+                    <i class="fas fa-play-circle" style="font-size: 1.8rem; color: #FF9F0A; margin-bottom: 8px;"></i>
+                    <h4 class="bn">ভিডিও দেখুন</h4>
+                </div>
+                <div class="glass" style="padding: 15px; text-align: center;" onclick="navTo('wallet')">
+                    <i class="fas fa-hand-holding-usd" style="font-size: 1.8rem; color: #30D158; margin-bottom: 8px;"></i>
+                    <h4 class="bn">টাকা তুলুন</h4>
+                </div>
+            </div>
+
+            <div class="glass" style="padding: 20px; border: 1px dashed var(--primary);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 50px; height: 50px; background: rgba(255,59,48,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-users" style="color: var(--primary); font-size: 1.5rem;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 class="bn">বন্ধুদের ইনভাইট করুন</h4>
+                        <p class="bn" style="font-size: 0.8rem; color: #888;">প্রতি রেফারে <span style="color: white; font-weight: bold;">৳ <span id="refBonusAmt">5.00</span></span> বোনাস</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn-main" style="padding: 10px; font-size: 0.9rem;" onclick="shareRef()"><i class="fas fa-share-alt"></i> শেয়ার</button>
+                    <button class="btn-main" style="padding: 10px; font-size: 0.9rem; background: rgba(255,255,255,0.1); border: 1px solid #333;" onclick="copyRef()"><i class="fas fa-copy"></i> কপি</button>
+                </div>
+                <input type="text" id="refLink" style="position: absolute; opacity: 0; pointer-events: none;">
+            </div>
+        </div>
+
+        <div id="tasks" class="page">
+            <h2 class="bn" style="margin-bottom: 5px;">প্রতিদিনের কাজ 📝</h2>
+            <p class="bn" style="color: #888; margin-bottom: 20px;">কাজ সম্পন্ন করুন এবং সাথে সাথে টাকা পান।</p>
+            <div class="task-box" style="border-color: var(--primary); background: rgba(255, 59, 48, 0.05);">
+                <div style="display: flex; align-items: center;">
+                    <div class="task-icon" style="background: var(--primary); color: white;">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="task-info">
+                        <h4 class="bn">ভিডিও অ্যাড দেখুন</h4>
+                        <span class="bn" style="font-size: 0.8rem; color: #ccc;">বাকি আছে: <span id="adsLeft">0</span> টি</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="task-reward">+৳ <span id="adRateDisplay">0.00</span></div>
+                    <button class="btn-main" style="padding: 6px 15px; font-size: 0.8rem; margin-top: 5px; width: auto;" onclick="watchAd()">দেখুন</button>
+                </div>
+            </div>
+            <div id="taskList" style="margin-top: 25px;"></div>
+        </div>
+
+        <div id="leaderboard" class="page">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-trophy" style="font-size: 3rem; color: #FFD700; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));"></i>
+                <h2 class="bn">লিডারবোর্ড 🏆</h2>
+                <p class="bn" style="color: #888;">সেরা ব্যবহারকারীদের তালিকা</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding: 0 15px 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; color: #666; font-size: 0.8rem;">
+                <span>ইউজার</span>
+                <span>ব্যালেন্স / লাইক</span>
+            </div>
+
+            <div id="leaderboardList" class="rank-list">
+                <div class="glass" style="padding:20px; text-align:center;">
+                    <div class="loader-spin" style="margin: 0 auto;"></div>
+                    <p class="bn" style="margin-top:10px;">ডাটা লোড হচ্ছে...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="wallet" class="page">
+            <h2 class="bn" style="text-align: center; margin-bottom: 20px;">আপনার ওয়ালেট 💳</h2>
+            <div class="tab-container">
+                <div class="tab-btn active bn" onclick="switchWalletTab('withdraw', this)">উইথড্র করুন</div>
+                <div class="tab-btn bn" onclick="switchWalletTab('history', this)">হিস্টোরি</div>
+            </div>
+            <div id="withdrawTab">
+                <div class="glass" style="padding: 20px; margin-bottom: 20px;">
+                    <small class="bn" style="color: #888;">উইথড্র করার যোগ্য ব্যালেন্স</small>
+                    <h2 class="gradient-text">৳ <span id="wBalance">0.00</span></h2>
+                </div>
+                <div class="glass" style="padding: 20px;">
+                    <div style="margin-bottom: 15px;">
+                        <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">পেমেন্ট মেথড</label>
+                        <select id="wMethod" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none;">
+                            <option value="bkash">বিকাশ (পার্সোনাল)</option>
+                            <option value="nagad">নগদ (পার্সোনাল)</option>
+                            <option value="rocket">রকেট (পার্সোনাল)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">অ্যামাউন্ট (টাকা)</label>
+                        <input type="number" id="wAmount" placeholder="৫০" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none; font-family: 'Poppins';">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">মোবাইল নাম্বার</label>
+                        <input type="number" id="wNumber" placeholder="017xxxxxxxx" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none; font-family: 'Poppins';">
+                    </div>
+                    <button class="btn-main" onclick="submitWithdraw()">টাকা উত্তোলন করুন</button>
+                </div>
+            </div>
+            <div id="historyTab" style="display: none;">
+                <div class="glass" id="historyList" style="min-height: 200px;"></div>
+            </div>
+        </div>
+
+        <div id="profile" class="page">
+            <div style="text-align: center; margin-bottom: 30px; padding-top: 10px;">
+                <img src="" id="profAvatar" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); padding: 3px;">
+                <h2 id="profName" style="margin-top: 10px;">User Name</h2>
+                <div class="bn" style="color: var(--text-muted); font-size: 0.9rem;">ID: <span id="profId">...</span></div>
+                <div style="margin-top: 10px; font-size: 0.9rem;">
+                    <i class="fas fa-heart" style="color: #FF2D55;"></i> প্রাপ্ত লাইক: <span id="profLikes">0</span>
+                </div>
+            </div>
+            <h3 class="bn" style="margin-bottom: 15px;">হেল্প ও সাপোর্ট 🛠️</h3>
+            <div class="glass" style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                <div onclick="window.open('https://t.me/YourSupportBot', '_blank')" style="background: rgba(0,136,204,0.15); border: 1px solid rgba(0,136,204,0.3); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer;">
+                    <i class="fab fa-telegram-plane" style="font-size: 1.5rem; color: #0088cc; margin-bottom: 8px;"></i>
+                    <div class="bn" style="font-size: 0.9rem;">সাপোর্ট গ্রুপ</div>
+                </div>
+                <div onclick="window.open('https://t.me/YourChannel', '_blank')" style="background: rgba(255,159,10,0.15); border: 1px solid rgba(255,159,10,0.3); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer;">
+                    <i class="fas fa-bullhorn" style="font-size: 1.5rem; color: #FF9F0A; margin-bottom: 8px;"></i>
+                    <div class="bn" style="font-size: 0.9rem;">চ্যানেল</div>
+                </div>
+            </div>
+            <button class="btn-main" onclick="logoutApp()" style="background: #1C1C1E; border: 1px solid #333; color: #FF453A;">
+                <i class="fas fa-sign-out-alt"></i> লগআউট
+            </button>
+        </div>
+
+    </div>
+
+    <nav class="nav-bar">
+        <a href="#" class="nav-item active" onclick="navTo('home', this)">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" onclick="navTo('tasks', this)">
+            <i class="fas fa-check-square"></i>
+            <span>Tasks</span>
+        </a>
+        <a href="#" class="nav-item" onclick="navTo('leaderboard', this)">
+            <i class="fas fa-trophy"></i>
+            <span>Top</span>
+        </a>
+        <a href="#" class="nav-item" onclick="navTo('wallet', this)">
+            <i class="fas fa-wallet"></i>
+            <span>Wallet</span>
+        </a>
+        <a href="#" class="nav-item" onclick="navTo('profile', this)">
+            <i class="fas fa-user-circle"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNz6xpNVFYhrMWb90MGqPcc4_FXVGJRjI", 
+            authDomain: "imo-clone-17935.firebaseapp.com",
+            projectId: "imo-clone-17935",
+            storageBucket: "imo-clone-17935.firebasestorage.app",
+            messagingSenderId: "760912716104",
+            appId: "1:760912716104:web:07aea8166ed4638f64537d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let currentUser = null;
+        let userData = {};
+        let appConfig = {
+            notice: "স্বাগতম! আমাদের নতুন অ্যাপে কাজ করুন এবং পেমেন্ট নিন। নিয়ম মেনে কাজ করুন।",
+            referralBonus: 5.00,
+            adReward: 2.00,
+            dailyAdLimit: 10,
+            tasks: [
+                { id: 't1', title: 'টেলিগ্রাম চ্যানেলে জয়েন করুন', reward: 3.00, url: 'https://t.me/YourChannel', icon: 'fab fa-telegram' },
+                { id: 't2', title: 'ফেসবুক পেজ ফলো করুন', reward: 2.50, url: 'https://facebook.com', icon: 'fab fa-facebook' }
+            ]
+        };
+
+        // --- INIT ---
+        async function initApp() {
+            try {
+                const configSnap = await db.collection('config').doc('appConfig').get();
+                if(configSnap.exists) appConfig = { ...appConfig, ...configSnap.data() };
+
+                let uid, name, photo;
+                if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    uid = u.id.toString();
+                    name = u.first_name + (u.last_name ? ' ' + u.last_name : '');
+                    photo = u.photo_url;
+                } else {
+                    const cred = await auth.signInAnonymously();
+                    uid = cred.user.uid;
+                    name = "Guest User";
+                }
+                
+                currentUser = uid;
+                const userRef = db.collection('users').doc(uid);
+                const doc = await userRef.get();
+
+                if(!doc.exists) {
+                    await userRef.set({
+                        name: name,
+                        uid: uid,
+                        photo: photo || `https://ui-avatars.com/api/?name=${name}&background=FF3B30&color=fff`,
+                        taskBalance: 0,
+                        referralBalance: 0,
+                        referralCount: 0,
+                        likes: 0, // NEW field for likes
+                        adsWatchedToday: 0,
+                        claimedTasks: [],
+                        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    if(name !== doc.data().name) userRef.update({ name: name });
+                }
+
+                userRef.onSnapshot(snap => {
+                    userData = snap.data();
+                    updateUI();
+                });
+
+                document.getElementById('noticeText').innerHTML = appConfig.notice;
+                document.getElementById('refBonusAmt').innerText = appConfig.referralBonus;
+                document.getElementById('adRateDisplay').innerText = appConfig.adReward;
+                
+                renderTasks();
+                
+                setTimeout(() => {
+                    document.getElementById('appLoader').classList.remove('show');
+                    document.getElementById('noticeModal').classList.add('show');
+                }, 1500);
+
+            } catch (e) {
+                console.error(e);
+                showToast("সংযোগ ত্রুটি! পেজটি রিফ্রেশ করুন।", "error");
+            }
+        }
+
+        // --- UI FUNCS ---
+        function formatMoney(amount) { return (amount || 0).toFixed(2); }
+
+        function updateUI() {
+            const total = (userData.taskBalance || 0) + (userData.referralBalance || 0);
+            document.getElementById('userName').innerText = userData.name;
+            document.getElementById('userAvatar').src = userData.photo;
+            document.getElementById('profAvatar').src = userData.photo;
+            document.getElementById('profName').innerText = userData.name;
+            document.getElementById('profId').innerText = currentUser;
+            document.getElementById('profLikes').innerText = userData.likes || 0; // Show my likes
+
+            document.getElementById('topBalance').innerText = formatMoney(total);
+            document.getElementById('mainBalance').innerText = formatMoney(total);
+            document.getElementById('taskIncome').innerText = formatMoney(userData.taskBalance);
+            document.getElementById('refIncome').innerText = formatMoney(userData.referralBalance);
+            
+            const botLink = `https://t.me/AppleEarnBot?start=${currentUser}`;
+            document.getElementById('refLink').value = botLink;
+            document.getElementById('adsLeft').innerText = Math.max(0, appConfig.dailyAdLimit - (userData.adsWatchedToday || 0));
+            document.getElementById('wBalance').innerText = formatMoney(total);
+        }
+
+        function navTo(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            if(el) {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+            }
+
+            if(pageId === 'wallet') loadWithdrawHistory();
+            if(pageId === 'leaderboard') loadLeaderboard(); // Load leaderboard data
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        // --- TOAST ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(type === 'error' ? 'error' : 'success');
+            setTimeout(() => {
+                toast.style.animation = 'slideDown 0.3s reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- TASKS ---
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = "";
+            const claimed = userData.claimedTasks || [];
+
+            appConfig.tasks.forEach(task => {
+                const isClaimed = claimed.includes(task.id);
+                const isPending = localStorage.getItem(`task_pending_${task.id}`);
+                let btnHtml = '';
+                if(isClaimed) btnHtml = `<button class="btn-main" disabled style="padding: 6px 15px; width:auto; font-size: 0.8rem;"><i class="fas fa-check"></i> সম্পন্ন</button>`;
+                else if(isPending) btnHtml = `<button id="btn-${task.id}" class="btn-main btn-check" onclick="verifyTask('${task.id}', ${task.reward})" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Check <i class="fas fa-sync-alt"></i></button>`;
+                else btnHtml = `<button id="btn-${task.id}" class="btn-main" onclick="openTask('${task.id}', '${task.url}')" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Go <i class="fas fa-arrow-right"></i></button>`;
+
+                const html = `
+                <div class="task-box">
+                    <div style="display: flex; align-items: center;">
+                        <div class="task-icon"><i class="${task.icon}"></i></div>
+                        <div class="task-info"><h4 class="bn">${task.title}</h4><div class="task-reward">+৳ ${task.reward}</div></div>
+                    </div>
+                    <div>${btnHtml}</div>
+                </div>`;
+                list.innerHTML += html;
+            });
+        }
+
+        function openTask(taskId, url) {
+            localStorage.setItem(`task_pending_${taskId}`, 'true');
+            window.open(url, '_blank');
+            setTimeout(() => { renderTasks(); showToast("কাজটি সম্পন্ন করে ফিরে এসে Check বাটনে চাপুন", "info"); }, 1000);
+        }
+
+        async function verifyTask(taskId, reward) {
+            const btn = document.getElementById(`btn-${taskId}`);
+            btn.innerHTML = `<div class="loader-spin"></div>`; btn.disabled = true;
+            setTimeout(async () => {
+                try {
+                    await db.collection('users').doc(currentUser).update({
+                        taskBalance: firebase.firestore.FieldValue.increment(reward),
+                        claimedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
+                    });
+                    localStorage.removeItem(`task_pending_${taskId}`);
+                    showToast(`অভিনন্দন! আপনি ৳${reward} পেয়েছেন`, "success");
+                    renderTasks();
+                } catch(e) { showToast("এরর হয়েছে। আবার চেষ্টা করুন।", "error"); btn.innerHTML = "Check"; btn.disabled = false; }
+            }, 3000);
+        }
+
+        // --- AD SYSTEM ---
+        let adInterval;
+        function watchAd() {
+            if((userData.adsWatchedToday || 0) >= appConfig.dailyAdLimit) return showToast("আজকের লিমিট শেষ!", "error");
+            document.getElementById('adModal').classList.add('show');
+            let timeLeft = 15;
+            const timerEl = document.getElementById('adTimer');
+            timerEl.innerText = timeLeft;
+            adInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if(timeLeft <= 0) finishAd();
+            }, 1000);
+        }
+        function cancelAd() { clearInterval(adInterval); document.getElementById('adModal').classList.remove('show'); showToast("অ্যাড বাতিল করা হয়েছে।", "error"); }
+        async function finishAd() {
+            clearInterval(adInterval);
+            document.getElementById('adModal').classList.remove('show');
+            try {
+                await db.collection('users').doc(currentUser).update({
+                    taskBalance: firebase.firestore.FieldValue.increment(appConfig.adReward),
+                    adsWatchedToday: firebase.firestore.FieldValue.increment(1)
+                });
+                showToast(`সফল! +৳${appConfig.adReward} যুক্ত হয়েছে।`, "success");
+            } catch(e) { showToast("নেটওয়ার্ক এরর!", "error"); }
+        }
+
+        // --- WALLET ---
+        function shareRef() {
+            const url = document.getElementById('refLink').value;
+            window.open(`https://t.me/share/url?url=${url}&text=আমার সাথে অ্যাপল আর্নে কাজ করুন!`);
+        }
+        function copyRef() {
+            navigator.clipboard.writeText(document.getElementById("refLink").value);
+            showToast("রেফার লিংক কপি হয়েছে!", "success");
+        }
+        function switchWalletTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('withdrawTab').style.display = tab === 'withdraw' ? 'block' : 'none';
+            document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+            if(tab === 'history') loadWithdrawHistory();
+        }
+        async function submitWithdraw() {
+            const amount = parseFloat(document.getElementById('wAmount').value);
+            const number = document.getElementById('wNumber').value;
+            const method = document.getElementById('wMethod').value;
+            const total = (userData.taskBalance || 0) + (userData.referralBalance || 0);
+
+            if(amount < 50 || amount > total || number.length < 11) return showToast("তথ্য সঠিক নয় অথবা ব্যালেন্স কম।", "error");
+
+            try {
+                const batch = db.batch();
+                const userRef = db.collection('users').doc(currentUser);
+                let dedTask = userData.taskBalance >= amount ? amount : userData.taskBalance;
+                let dedRef = amount - dedTask;
+
+                batch.update(userRef, {
+                    taskBalance: firebase.firestore.FieldValue.increment(-dedTask),
+                    referralBalance: firebase.firestore.FieldValue.increment(-dedRef)
+                });
+                batch.set(db.collection('withdrawals').doc(), {
+                    uid: currentUser, amount, method, account: number, status: 'pending', date: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await batch.commit();
+                showToast("উইথড্র রিকোয়েস্ট সফল!", "success");
+                document.getElementById('wAmount').value = "";
+                switchWalletTab('history', document.querySelectorAll('.tab-btn')[1]);
+            } catch(e) { showToast("সার্ভার এরর।", "error"); }
+        }
+        async function loadWithdrawHistory() {
+            const list = document.getElementById('historyList');
+            try {
+                const snap = await db.collection('withdrawals').where('uid', '==', currentUser).orderBy('date', 'desc').limit(20).get();
+                if(snap.empty) return list.innerHTML = '<p class="bn" style="text-align:center; padding:30px; color:#666;">কোনো লেনদেন নেই।</p>';
+                let html = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const st = d.status === 'paid' ? 'st-paid' : 'st-pending';
+                    html += `<div class="history-item"><div><div class="bn" style="font-weight:600;">${d.method}</div><small class="bn" style="color:#666;">${d.date ? d.date.toDate().toLocaleDateString() : ''}</small></div><div style="text-align:right;"><div style="font-weight:bold;">৳ ${d.amount}</div><span class="status-badge ${st}">${d.status}</span></div></div>`;
+                });
+                list.innerHTML = html;
+            } catch(e) { console.error(e); list.innerHTML = '<p style="text-align:center;color:red">Error loading history.</p>'; }
+        }
+
+        // --- NEW: LEADERBOARD LOGIC ---
+        async function loadLeaderboard() {
+            const list = document.getElementById('leaderboardList');
+            try {
+                // Get top 50 users sorted by taskBalance
+                const snap = await db.collection('users').orderBy('taskBalance', 'desc').limit(50).get();
+                
+                if(snap.empty) {
+                    list.innerHTML = '<div class="glass" style="padding:20px;text-align:center;">কাউকে পাওয়া যায়নি।</div>';
+                    return;
+                }
+
+                let html = '';
+                let rank = 1;
+
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    const totalBal = (u.taskBalance || 0) + (u.referralBalance || 0);
+                    const refs = u.referralCount || 0; // Assuming you add this field later
+                    const likes = u.likes || 0;
+                    
+                    let rankClass = '';
+                    if(rank === 1) rankClass = 'top-1';
+                    else if(rank === 2) rankClass = 'top-2';
+                    else if(rank === 3) rankClass = 'top-3';
+
+                    // Check if I liked this user locally
+                    const isLiked = localStorage.getItem(`liked_${u.uid}`) ? 'liked' : '';
+
+                    html += `
+                    <div class="rank-item ${rankClass}">
+                        <div style="display:flex; align-items:center; flex:1;">
+                            <div class="rank-num">${rank}</div>
+                            <img src="${u.photo || 'https://via.placeholder.com/40'}" class="rank-img">
+                            <div class="rank-info">
+                                <div class="rank-name">${u.name.split(' ')[0]}</div>
+                                <div class="rank-stats">
+                                    <span>৳ ${formatMoney(totalBal)}</span>
+                                    <span>• ${refs} Ref</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="like-btn ${isLiked}" onclick="giveLike('${u.uid}', this)">
+                            <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                            <span class="like-count">${likes}</span>
+                        </div>
+                    </div>`;
+                    rank++;
+                });
+                list.innerHTML = html;
+
+            } catch(e) {
+                console.error(e);
+                list.innerHTML = '<div class="glass" style="padding:20px; text-align:center; color:#FF453A;">ডাটা লোড হয়নি। (Firebase Index প্রয়োজন হতে পারে)</div>';
+            }
+        }
+
+        async function giveLike(targetUid, btn) {
+            // Prevent self-like or double like locally
+            if(targetUid === currentUser) return showToast("নিজেকে লাইক দেওয়া যাবে না!", "error");
+            if(localStorage.getItem(`liked_${targetUid}`)) return showToast("ইতোমধ্যে লাইক দিয়েছেন!", "info");
+
+            // UI Update Immediate (Optimistic)
+            btn.classList.add('liked');
+            btn.querySelector('i').classList.remove('far');
+            btn.querySelector('i').classList.add('fas');
+            let countSpan = btn.querySelector('.like-count');
+            countSpan.innerText = parseInt(countSpan.innerText) + 1;
+
+            localStorage.setItem(`liked_${targetUid}`, 'true');
+
+            // DB Update
+            try {
+                await db.collection('users').doc(targetUid).update({
+                    likes: firebase.firestore.FieldValue.increment(1)
+                });
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            } catch(e) {
+                console.error("Like Error", e);
+            }
+        }
+
+        function logoutApp() { if(confirm("লগআউট করবেন?")) auth.signOut().then(()=>location.reload()); }
+        
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>
