@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -102,7 +103,7 @@
             display: flex; align-items: center; gap: 8px;
         }
 
-        /* --- Leaderboard Styles (NEW) --- */
+        /* --- Leaderboard Styles --- */
         .rank-list { margin-top: 10px; }
         .rank-item {
             display: flex; align-items: center; justify-content: space-between;
@@ -112,7 +113,6 @@
             transition: 0.3s;
         }
         
-        /* Top 3 Animation */
         .rank-item.top-1 { 
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(0,0,0,0)); 
             border: 1px solid rgba(255, 215, 0, 0.4);
@@ -174,6 +174,13 @@
         .modal-overlay.show .modal-box { transform: scale(1); }
         .notice-content { max-height: 50vh; overflow-y: auto; margin: 15px 0; font-size: 0.9rem; line-height: 1.6; color: #ccc; }
 
+        /* Form Inputs */
+        .form-control {
+            width: 100%; padding: 14px; background: #000; border: 1px solid #333; 
+            color: white; border-radius: 10px; outline: none; font-family: 'Poppins';
+            margin-bottom: 15px;
+        }
+
         /* Nav */
         .nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; height: 70px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; text-decoration: none; font-size: 0.7rem; gap: 4px; width: 50px; height: 50px; border-radius: 50%; transition: 0.3s; }
@@ -220,7 +227,7 @@
     <div id="adModal" class="modal-overlay">
         <div class="modal-box" style="text-align: center;">
             <div style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2rem; font-weight: bold;">
-                <span id="adTimer">15</span>
+                <span id="adTimer">--</span>
             </div>
             <h3 class="bn">বিজ্ঞাপন দেখা হচ্ছে...</h3>
             <p class="bn" style="color: #888; margin-bottom: 20px;">দয়া করে পেজটি বন্ধ করবেন না।</p>
@@ -246,7 +253,7 @@
             </div>
 
             <div class="balance-card glass">
-                <p class="bn" style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">আপনার বর্তমান ব্যালেন্স</p>
+                <p class="bn" style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">আপনার সর্বমোট ব্যালেন্স</p>
                 <h1 style="font-size: 2.8rem; margin: 10px 0;" class="gradient-text">৳ <span id="mainBalance">0.00</span></h1>
                 
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -292,7 +299,7 @@
 
         <div id="tasks" class="page">
             <h2 class="bn" style="margin-bottom: 5px;">প্রতিদিনের কাজ 📝</h2>
-            <p class="bn" style="color: #888; margin-bottom: 20px;">কাজ সম্পন্ন করুন এবং সাথে সাথে টাকা পান।</p>
+            <p class="bn" style="color: #888; margin-bottom: 20px;">কাজগুলো প্রতিদিন রাত ১২টায় রিসেট হবে।</p>
             <div class="task-box" style="border-color: var(--primary); background: rgba(255, 59, 48, 0.05);">
                 <div style="display: flex; align-items: center;">
                     <div class="task-icon" style="background: var(--primary); color: white;">
@@ -339,26 +346,41 @@
             </div>
             <div id="withdrawTab">
                 <div class="glass" style="padding: 20px; margin-bottom: 20px;">
-                    <small class="bn" style="color: #888;">উইথড্র করার যোগ্য ব্যালেন্স</small>
-                    <h2 class="gradient-text">৳ <span id="wBalance">0.00</span></h2>
+                    <small class="bn" style="color: #888;">উত্তোলনযোগ্য ব্যালেন্স</small>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <span class="bn" style="background:#333; padding:5px 10px; border-radius:5px; font-size:0.8rem;">টাস্ক: <span id="wTaskBal">0</span>৳</span>
+                        <span class="bn" style="background:#333; padding:5px 10px; border-radius:5px; font-size:0.8rem;">রেফার: <span id="wRefBal">0</span>৳</span>
+                    </div>
                 </div>
                 <div class="glass" style="padding: 20px;">
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">কোন ব্যালেন্স থেকে নিবেন?</label>
+                        <select id="wSource" class="form-control">
+                            <option value="task">Main Balance (Task Income)</option>
+                            <option value="ref">Referral Balance</option>
+                        </select>
+                    </div>
+
                     <div style="margin-bottom: 15px;">
                         <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">পেমেন্ট মেথড</label>
-                        <select id="wMethod" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none;">
+                        <select id="wMethod" class="form-control">
                             <option value="bkash">বিকাশ (পার্সোনাল)</option>
                             <option value="nagad">নগদ (পার্সোনাল)</option>
                             <option value="rocket">রকেট (পার্সোনাল)</option>
                         </select>
                     </div>
+
                     <div style="margin-bottom: 15px;">
                         <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">অ্যামাউন্ট (টাকা)</label>
-                        <input type="number" id="wAmount" placeholder="৫০" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none; font-family: 'Poppins';">
+                        <input type="number" id="wAmount" placeholder="৫০" class="form-control">
                     </div>
+
                     <div style="margin-bottom: 20px;">
                         <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">মোবাইল নাম্বার</label>
-                        <input type="number" id="wNumber" placeholder="017xxxxxxxx" style="width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: white; border-radius: 10px; outline: none; font-family: 'Poppins';">
+                        <input type="number" id="wNumber" placeholder="017xxxxxxxx" class="form-control">
                     </div>
+
                     <button class="btn-main" onclick="submitWithdraw()">টাকা উত্তোলন করুন</button>
                 </div>
             </div>
@@ -437,10 +459,12 @@
         let currentUser = null;
         let userData = {};
         let appConfig = {
-            notice: "স্বাগতম! আমাদের নতুন অ্যাপে কাজ করুন এবং পেমেন্ট নিন। নিয়ম মেনে কাজ করুন।",
+            notice: "স্বাগতম! আমাদের নতুন অ্যাপে কাজ করুন এবং পেমেন্ট নিন।",
             referralBonus: 5.00,
             adReward: 2.00,
             dailyAdLimit: 10,
+            botUsername: "AppleEarnBot", // Change this to your real bot username
+            adZoneId: "10312256", // Default Zone ID
             tasks: [
                 { id: 't1', title: 'টেলিগ্রাম চ্যানেলে জয়েন করুন', reward: 3.00, url: 'https://t.me/YourChannel', icon: 'fab fa-telegram' },
                 { id: 't2', title: 'ফেসবুক পেজ ফলো করুন', reward: 2.50, url: 'https://facebook.com', icon: 'fab fa-facebook' }
@@ -450,8 +474,16 @@
         // --- INIT ---
         async function initApp() {
             try {
+                // Fetch Config
                 const configSnap = await db.collection('config').doc('appConfig').get();
                 if(configSnap.exists) appConfig = { ...appConfig, ...configSnap.data() };
+
+                // Inject Ad Script Dynamically based on Admin Config
+                const script = document.createElement('script');
+                script.src = '//libtl.com/sdk.js';
+                script.dataset.zone = appConfig.adZoneId;
+                script.dataset.sdk = 'show_' + appConfig.adZoneId;
+                document.head.appendChild(script);
 
                 let uid, name, photo;
                 if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -477,25 +509,32 @@
                         taskBalance: 0,
                         referralBalance: 0,
                         referralCount: 0,
-                        likes: 0, // NEW field for likes
+                        likes: 0,
                         adsWatchedToday: 0,
-                        claimedTasks: [],
+                        adDate: new Date().toDateString(),
+                        claimedTasksMap: {}, // Using Map for daily reset logic
                         joinedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } else {
+                    // Update Name if changed
                     if(name !== doc.data().name) userRef.update({ name: name });
+                    
+                    // Reset Daily Ad Limit if new day
+                    const todayStr = new Date().toDateString();
+                    if (doc.data().adDate !== todayStr) {
+                         userRef.update({ adsWatchedToday: 0, adDate: todayStr });
+                    }
                 }
 
                 userRef.onSnapshot(snap => {
                     userData = snap.data();
                     updateUI();
+                    renderTasks(); // Re-render tasks to check daily status
                 });
 
                 document.getElementById('noticeText').innerHTML = appConfig.notice;
                 document.getElementById('refBonusAmt').innerText = appConfig.referralBonus;
                 document.getElementById('adRateDisplay').innerText = appConfig.adReward;
-                
-                renderTasks();
                 
                 setTimeout(() => {
                     document.getElementById('appLoader').classList.remove('show');
@@ -518,17 +557,21 @@
             document.getElementById('profAvatar').src = userData.photo;
             document.getElementById('profName').innerText = userData.name;
             document.getElementById('profId').innerText = currentUser;
-            document.getElementById('profLikes').innerText = userData.likes || 0; // Show my likes
+            document.getElementById('profLikes').innerText = userData.likes || 0; 
 
             document.getElementById('topBalance').innerText = formatMoney(total);
             document.getElementById('mainBalance').innerText = formatMoney(total);
             document.getElementById('taskIncome').innerText = formatMoney(userData.taskBalance);
             document.getElementById('refIncome').innerText = formatMoney(userData.referralBalance);
             
-            const botLink = `https://t.me/AppleEarnBot?start=${currentUser}`;
+            // Mini App Link
+            const botLink = `https://t.me/${appConfig.botUsername}/app?startapp=${currentUser}`;
             document.getElementById('refLink').value = botLink;
+            
             document.getElementById('adsLeft').innerText = Math.max(0, appConfig.dailyAdLimit - (userData.adsWatchedToday || 0));
-            document.getElementById('wBalance').innerText = formatMoney(total);
+            
+            document.getElementById('wTaskBal').innerText = formatMoney(userData.taskBalance);
+            document.getElementById('wRefBal').innerText = formatMoney(userData.referralBalance);
         }
 
         function navTo(pageId, el) {
@@ -541,7 +584,7 @@
             }
 
             if(pageId === 'wallet') loadWithdrawHistory();
-            if(pageId === 'leaderboard') loadLeaderboard(); // Load leaderboard data
+            if(pageId === 'leaderboard') loadLeaderboard(); 
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -561,19 +604,40 @@
             }, 3000);
         }
 
-        // --- TASKS ---
+        // --- TASKS (Daily Reset Logic) ---
         function renderTasks() {
             const list = document.getElementById('taskList');
             list.innerHTML = "";
-            const claimed = userData.claimedTasks || [];
+            
+            const claimedMap = userData.claimedTasksMap || {}; 
+            // Fallback for old users who might have array instead of map
+            const claimedArray = userData.claimedTasks || []; 
+            const todayStr = new Date().toDateString();
 
             appConfig.tasks.forEach(task => {
-                const isClaimed = claimed.includes(task.id);
+                // Check if claimed TODAY
+                let isClaimedToday = false;
+                
+                if (claimedMap[task.id] === todayStr) {
+                    isClaimedToday = true;
+                } else if (claimedArray.includes(task.id) && !claimedMap[task.id]) {
+                    // Migration logic: if in old array, treat as claimed permanently unless migrated. 
+                    // For this logic, we assume old array means claimed previously. 
+                    // To force daily reset, we only respect the Map date. 
+                    // So if it's NOT in the map for today, it is NOT claimed.
+                    isClaimedToday = false; 
+                }
+
                 const isPending = localStorage.getItem(`task_pending_${task.id}`);
                 let btnHtml = '';
-                if(isClaimed) btnHtml = `<button class="btn-main" disabled style="padding: 6px 15px; width:auto; font-size: 0.8rem;"><i class="fas fa-check"></i> সম্পন্ন</button>`;
-                else if(isPending) btnHtml = `<button id="btn-${task.id}" class="btn-main btn-check" onclick="verifyTask('${task.id}', ${task.reward})" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Check <i class="fas fa-sync-alt"></i></button>`;
-                else btnHtml = `<button id="btn-${task.id}" class="btn-main" onclick="openTask('${task.id}', '${task.url}')" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Go <i class="fas fa-arrow-right"></i></button>`;
+
+                if(isClaimedToday) {
+                    btnHtml = `<button class="btn-main" disabled style="padding: 6px 15px; width:auto; font-size: 0.8rem;"><i class="fas fa-check"></i> সম্পন্ন</button>`;
+                } else if(isPending) {
+                    btnHtml = `<button id="btn-${task.id}" class="btn-main btn-check" onclick="verifyTask('${task.id}', ${task.reward})" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Check <i class="fas fa-sync-alt"></i></button>`;
+                } else {
+                    btnHtml = `<button id="btn-${task.id}" class="btn-main" onclick="openTask('${task.id}', '${task.url}')" style="padding: 6px 15px; width:auto; font-size: 0.8rem;">Go <i class="fas fa-arrow-right"></i></button>`;
+                }
 
                 const html = `
                 <div class="task-box">
@@ -596,41 +660,67 @@
         async function verifyTask(taskId, reward) {
             const btn = document.getElementById(`btn-${taskId}`);
             btn.innerHTML = `<div class="loader-spin"></div>`; btn.disabled = true;
+            
             setTimeout(async () => {
                 try {
-                    await db.collection('users').doc(currentUser).update({
+                    const todayStr = new Date().toDateString();
+                    const updateData = {
                         taskBalance: firebase.firestore.FieldValue.increment(reward),
-                        claimedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
-                    });
+                    };
+                    // Save task with today's date in a Map
+                    updateData[`claimedTasksMap.${taskId}`] = todayStr;
+
+                    await db.collection('users').doc(currentUser).update(updateData);
+                    
                     localStorage.removeItem(`task_pending_${taskId}`);
                     showToast(`অভিনন্দন! আপনি ৳${reward} পেয়েছেন`, "success");
-                    renderTasks();
-                } catch(e) { showToast("এরর হয়েছে। আবার চেষ্টা করুন।", "error"); btn.innerHTML = "Check"; btn.disabled = false; }
+                    // renderTasks will trigger automatically via onSnapshot
+                } catch(e) { 
+                    console.error(e);
+                    showToast("এরর হয়েছে। আবার চেষ্টা করুন।", "error"); 
+                    btn.innerHTML = "Check"; btn.disabled = false; 
+                }
             }, 3000);
         }
 
-        // --- AD SYSTEM ---
+        // --- AD SYSTEM (Dynamic Zone) ---
         let adInterval;
         function watchAd() {
             if((userData.adsWatchedToday || 0) >= appConfig.dailyAdLimit) return showToast("আজকের লিমিট শেষ!", "error");
-            document.getElementById('adModal').classList.add('show');
-            let timeLeft = 15;
-            const timerEl = document.getElementById('adTimer');
-            timerEl.innerText = timeLeft;
-            adInterval = setInterval(() => {
-                timeLeft--;
-                timerEl.innerText = timeLeft;
-                if(timeLeft <= 0) finishAd();
-            }, 1000);
+            
+            // Trigger Ad based on Dynamic ID
+            const adFuncName = 'show_' + appConfig.adZoneId;
+            
+            // Check if SDK loaded
+            if (typeof window[adFuncName] === 'function') {
+                window[adFuncName]().then(() => {
+                    // Ad shown successfully, show timer modal for reward
+                    document.getElementById('adModal').classList.add('show');
+                    let timeLeft = 10;
+                    const timerEl = document.getElementById('adTimer');
+                    timerEl.innerText = timeLeft;
+                    adInterval = setInterval(() => {
+                        timeLeft--;
+                        timerEl.innerText = timeLeft;
+                        if(timeLeft <= 0) finishAd();
+                    }, 1000);
+                });
+            } else {
+                showToast("বিজ্ঞাপন লোড হচ্ছে... একটু অপেক্ষা করুন", "error");
+                // Reload SDK if needed or just wait
+            }
         }
+
         function cancelAd() { clearInterval(adInterval); document.getElementById('adModal').classList.remove('show'); showToast("অ্যাড বাতিল করা হয়েছে।", "error"); }
+        
         async function finishAd() {
             clearInterval(adInterval);
             document.getElementById('adModal').classList.remove('show');
             try {
                 await db.collection('users').doc(currentUser).update({
                     taskBalance: firebase.firestore.FieldValue.increment(appConfig.adReward),
-                    adsWatchedToday: firebase.firestore.FieldValue.increment(1)
+                    adsWatchedToday: firebase.firestore.FieldValue.increment(1),
+                    adDate: new Date().toDateString()
                 });
                 showToast(`সফল! +৳${appConfig.adReward} যুক্ত হয়েছে।`, "success");
             } catch(e) { showToast("নেটওয়ার্ক এরর!", "error"); }
@@ -639,10 +729,15 @@
         // --- WALLET ---
         function shareRef() {
             const url = document.getElementById('refLink').value;
-            window.open(`https://t.me/share/url?url=${url}&text=আমার সাথে অ্যাপল আর্নে কাজ করুন!`);
+            // Using Telegram Share
+            const text = encodeURIComponent("আমার সাথে অ্যাপল আর্নে কাজ করুন এবং প্রতিদিন টাকা আয় করুন! 👇");
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`;
+            window.open(shareUrl);
         }
         function copyRef() {
-            navigator.clipboard.writeText(document.getElementById("refLink").value);
+            const input = document.getElementById("refLink");
+            input.value = `https://t.me/${appConfig.botUsername}/app?startapp=${currentUser}`;
+            navigator.clipboard.writeText(input.value);
             showToast("রেফার লিংক কপি হয়েছে!", "success");
         }
         function switchWalletTab(tab, btn) {
@@ -652,33 +747,54 @@
             document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
             if(tab === 'history') loadWithdrawHistory();
         }
+
         async function submitWithdraw() {
             const amount = parseFloat(document.getElementById('wAmount').value);
             const number = document.getElementById('wNumber').value;
             const method = document.getElementById('wMethod').value;
-            const total = (userData.taskBalance || 0) + (userData.referralBalance || 0);
+            const source = document.getElementById('wSource').value; // 'task' or 'ref'
 
-            if(amount < 50 || amount > total || number.length < 11) return showToast("তথ্য সঠিক নয় অথবা ব্যালেন্স কম।", "error");
+            if (!amount || !number) return showToast("সব তথ্য পূরণ করুন", "error");
+            
+            const currentBal = source === 'task' ? (userData.taskBalance || 0) : (userData.referralBalance || 0);
+            
+            if (amount < 50) return showToast("সর্বনিম্ন উইথড্র ৫০ টাকা", "error");
+            if (amount > currentBal) return showToast("আপনার পর্যাপ্ত ব্যালেন্স নেই!", "error");
+            if (number.length < 11) return showToast("সঠিক নাম্বার দিন", "error");
+
+            if(!confirm(`আপনি কি নিশ্চিত আপনি ${source === 'task' ? 'মেইন ব্যালেন্স' : 'রেফার ব্যালেন্স'} থেকে ${amount} টাকা উইথড্র করতে চান?`)) return;
 
             try {
                 const batch = db.batch();
                 const userRef = db.collection('users').doc(currentUser);
-                let dedTask = userData.taskBalance >= amount ? amount : userData.taskBalance;
-                let dedRef = amount - dedTask;
+                
+                // Deduct based on source
+                if(source === 'task') {
+                    batch.update(userRef, { taskBalance: firebase.firestore.FieldValue.increment(-amount) });
+                } else {
+                    batch.update(userRef, { referralBalance: firebase.firestore.FieldValue.increment(-amount) });
+                }
 
-                batch.update(userRef, {
-                    taskBalance: firebase.firestore.FieldValue.increment(-dedTask),
-                    referralBalance: firebase.firestore.FieldValue.increment(-dedRef)
-                });
                 batch.set(db.collection('withdrawals').doc(), {
-                    uid: currentUser, amount, method, account: number, status: 'pending', date: firebase.firestore.FieldValue.serverTimestamp()
+                    uid: currentUser, 
+                    amount, 
+                    method, 
+                    account: number, 
+                    source: source, // Save which balance was used
+                    status: 'pending', 
+                    date: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
                 await batch.commit();
-                showToast("উইথড্র রিকোয়েস্ট সফল!", "success");
+                showToast("উইথড্র রিকোয়েস্ট সফল হয়েছে!", "success");
                 document.getElementById('wAmount').value = "";
                 switchWalletTab('history', document.querySelectorAll('.tab-btn')[1]);
-            } catch(e) { showToast("সার্ভার এরর।", "error"); }
+            } catch(e) { 
+                console.error(e);
+                showToast("সার্ভার এরর।", "error"); 
+            }
         }
+
         async function loadWithdrawHistory() {
             const list = document.getElementById('historyList');
             try {
@@ -688,17 +804,29 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     const st = d.status === 'paid' ? 'st-paid' : 'st-pending';
-                    html += `<div class="history-item"><div><div class="bn" style="font-weight:600;">${d.method}</div><small class="bn" style="color:#666;">${d.date ? d.date.toDate().toLocaleDateString() : ''}</small></div><div style="text-align:right;"><div style="font-weight:bold;">৳ ${d.amount}</div><span class="status-badge ${st}">${d.status}</span></div></div>`;
+                    const color = d.status === 'paid' ? '#30D158' : '#FF9F0A';
+                    const srcTxt = d.source === 'ref' ? '(Ref)' : '(Main)';
+                    
+                    html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div>
+                            <div class="bn" style="font-weight:600;">${d.method} ${srcTxt}</div>
+                            <small class="bn" style="color:#666;">${d.date ? d.date.toDate().toLocaleDateString() : 'Processing...'}</small>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:bold;">৳ ${d.amount}</div>
+                            <span style="font-size:0.8rem; color:${color}; text-transform:uppercase;">${d.status}</span>
+                        </div>
+                    </div>`;
                 });
                 list.innerHTML = html;
-            } catch(e) { console.error(e); list.innerHTML = '<p style="text-align:center;color:red">Error loading history.</p>'; }
+            } catch(e) { console.error(e); list.innerHTML = '<p style="text-align:center;color:red">Error loading history. (Index required)</p>'; }
         }
 
-        // --- NEW: LEADERBOARD LOGIC ---
+        // --- LEADERBOARD ---
         async function loadLeaderboard() {
             const list = document.getElementById('leaderboardList');
             try {
-                // Get top 50 users sorted by taskBalance
                 const snap = await db.collection('users').orderBy('taskBalance', 'desc').limit(50).get();
                 
                 if(snap.empty) {
@@ -712,7 +840,7 @@
                 snap.forEach(doc => {
                     const u = doc.data();
                     const totalBal = (u.taskBalance || 0) + (u.referralBalance || 0);
-                    const refs = u.referralCount || 0; // Assuming you add this field later
+                    const refs = u.referralCount || 0; 
                     const likes = u.likes || 0;
                     
                     let rankClass = '';
@@ -720,7 +848,6 @@
                     else if(rank === 2) rankClass = 'top-2';
                     else if(rank === 3) rankClass = 'top-3';
 
-                    // Check if I liked this user locally
                     const isLiked = localStorage.getItem(`liked_${u.uid}`) ? 'liked' : '';
 
                     html += `
@@ -747,16 +874,14 @@
 
             } catch(e) {
                 console.error(e);
-                list.innerHTML = '<div class="glass" style="padding:20px; text-align:center; color:#FF453A;">ডাটা লোড হয়নি। (Firebase Index প্রয়োজন হতে পারে)</div>';
+                list.innerHTML = '<div class="glass" style="padding:20px; text-align:center; color:#FF453A;">ডাটা লোড হয়নি। (Firebase Index প্রয়োজন)</div>';
             }
         }
 
         async function giveLike(targetUid, btn) {
-            // Prevent self-like or double like locally
             if(targetUid === currentUser) return showToast("নিজেকে লাইক দেওয়া যাবে না!", "error");
             if(localStorage.getItem(`liked_${targetUid}`)) return showToast("ইতোমধ্যে লাইক দিয়েছেন!", "info");
 
-            // UI Update Immediate (Optimistic)
             btn.classList.add('liked');
             btn.querySelector('i').classList.remove('far');
             btn.querySelector('i').classList.add('fas');
@@ -765,15 +890,12 @@
 
             localStorage.setItem(`liked_${targetUid}`, 'true');
 
-            // DB Update
             try {
                 await db.collection('users').doc(targetUid).update({
                     likes: firebase.firestore.FieldValue.increment(1)
                 });
                 if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            } catch(e) {
-                console.error("Like Error", e);
-            }
+            } catch(e) { console.error("Like Error", e); }
         }
 
         function logoutApp() { if(confirm("লগআউট করবেন?")) auth.signOut().then(()=>location.reload()); }
@@ -783,3 +905,4 @@
     </script>
 </body>
 </html>
+
