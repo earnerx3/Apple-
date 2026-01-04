@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -9,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -103,6 +103,58 @@
             display: flex; align-items: center; gap: 8px;
         }
 
+        /* --- NEW Premium Rotating Border Ad Card --- */
+        .premium-ad-card {
+            position: relative;
+            background: #1C1C1E; 
+            border-radius: 16px; 
+            padding: 20px; /* Smaller padding */
+            text-align: center;
+            margin-bottom: 25px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        /* The Rotating Border Logic */
+        .premium-ad-card::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: conic-gradient(
+                transparent 0deg,
+                transparent 80deg,
+                #FF3B30 100deg, /* Red */
+                transparent 140deg,
+                transparent 220deg,
+                #007AFF 260deg, /* Blue */
+                transparent 300deg
+            );
+            animation: rotateBorder 4s linear infinite;
+            z-index: -2;
+        }
+
+        /* Inner background to cover the center of the gradient */
+        .premium-ad-card::after {
+            content: '';
+            position: absolute;
+            inset: 2px; /* Thickness of border */
+            background: #1C1C1E; /* Match card bg */
+            border-radius: 15px;
+            z-index: -1;
+        }
+
+        .ad-icon-small {
+            font-size: 2.2rem; /* Smaller Icon */
+            color: var(--primary);
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 10px rgba(255, 59, 48, 0.6));
+        }
+
         /* --- Leaderboard Styles --- */
         .rank-list { margin-top: 10px; }
         .rank-item {
@@ -168,7 +220,7 @@
         .toast.success { border-color: var(--success); } .toast.error { border-color: var(--danger); }
         
         /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; }
         .modal-overlay.show { opacity: 1; visibility: visible; }
         .modal-box { width: 85%; max-width: 360px; background: #1C1C1E; border-radius: 20px; padding: 25px; border: 1px solid var(--glass-border); transform: scale(0.9); transition: 0.3s; position: relative; }
         .modal-overlay.show .modal-box { transform: scale(1); }
@@ -191,19 +243,39 @@
         /* Animations */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotateBorder { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); } }
         @keyframes pop { 50% { transform: scale(1.4); } }
+        @keyframes pulseIcon { 0% { transform: scale(1); } 50% { transform: scale(1.1); text-shadow: 0 0 20px var(--primary); } 100% { transform: scale(1); } }
+        @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 59, 48, 0.5); } 100% { transform: scale(1); } }
+        
+        /* New Bouncing Animation for Loader */
+        @keyframes bounceApple {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
         .loader-spin { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: rotate 1s linear infinite; }
 
     </style>
 </head>
 <body>
 
-    <div id="appLoader" class="modal-overlay show" style="background: #000; z-index: 9999;">
-        <div style="text-align: center;">
-            <i class="fab fa-apple" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></i>
-            <h3 class="bn" style="color: #fff;">লোডিং হচ্ছে...</h3>
+    <!-- UPDATED: New Loader Structure with Bouncing Apple & Percentage -->
+    <div id="appLoader" class="modal-overlay show" style="background: #000; z-index: 9999; flex-direction: column;">
+        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <i class="fab fa-apple" style="font-size: 5rem; color: var(--primary); margin-bottom: 20px; animation: bounceApple 1.5s infinite ease-in-out;"></i>
+            
+            <div style="width: 200px; height: 6px; background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+                <div id="loadingBar" style="width: 0%; height: 100%; background: var(--primary-grad); transition: width 0.1s linear;"></div>
+            </div>
+            
+            <h3 class="bn" style="color: #fff; font-size: 1.2rem;">লোডিং <span id="loadPercent">0</span>%</h3>
+        </div>
+        
+        <div style="margin-bottom: 30px; text-align: center;">
+            <p style="color: #444; font-size: 0.7rem; letter-spacing: 1px; font-family: monospace;">PRIVACY & PROCESS • SECURE</p>
         </div>
     </div>
 
@@ -224,14 +296,19 @@
         </div>
     </div>
 
-    <div id="adModal" class="modal-overlay">
-        <div class="modal-box" style="text-align: center;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2rem; font-weight: bold;">
-                <span id="adTimer">--</span>
+    <div id="adModal" class="modal-overlay" style="backdrop-filter: blur(15px);">
+        <div class="modal-box" style="text-align: center; border: 2px solid var(--primary);">
+            <div style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2.5rem; font-weight: bold; background: rgba(0,0,0,0.5);">
+                <span id="adTimer" style="color: white;">--</span>
             </div>
-            <h3 class="bn">বিজ্ঞাপন দেখা হচ্ছে...</h3>
-            <p class="bn" style="color: #888; margin-bottom: 20px;">দয়া করে পেজটি বন্ধ করবেন না।</p>
-            <button class="btn-main" style="background: transparent; border: 1px solid #FF453A; color: #FF453A;" onclick="cancelAd()">বন্ধ করুন (No Reward)</button>
+            <h3 class="bn" style="font-size: 1.3rem;">বিজ্ঞাপন দেখা হচ্ছে...</h3>
+            <p class="bn" style="color: #ccc; margin-bottom: 25px; margin-top: 10px; font-size: 0.9rem;">
+                <i class="fas fa-exclamation-triangle" style="color: #FF9F0A;"></i> দয়া করে ১০ সেকেন্ড অপেক্ষা করুন।<br>
+                সময় শেষ হওয়ার আগে বন্ধ করলে <span style="color: #FF453A;">টাকা পাবেন না।</span>
+            </p>
+            <button class="btn-main" style="background: transparent; border: 1px solid #FF453A; color: #FF453A; padding: 12px;" onclick="cancelAd()">
+                <i class="fas fa-times"></i> বন্ধ করুন (পেমেন্ট ছাড়া)
+            </button>
         </div>
     </div>
 
@@ -299,22 +376,26 @@
 
         <div id="tasks" class="page">
             <h2 class="bn" style="margin-bottom: 5px;">প্রতিদিনের কাজ 📝</h2>
-            <p class="bn" style="color: #888; margin-bottom: 20px;">কাজগুলো প্রতিদিন রাত ১২টায় রিসেট হবে।</p>
-            <div class="task-box" style="border-color: var(--primary); background: rgba(255, 59, 48, 0.05);">
-                <div style="display: flex; align-items: center;">
-                    <div class="task-icon" style="background: var(--primary); color: white;">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <div class="task-info">
-                        <h4 class="bn">ভিডিও অ্যাড দেখুন</h4>
-                        <span class="bn" style="font-size: 0.8rem; color: #ccc;">বাকি আছে: <span id="adsLeft">0</span> টি</span>
-                    </div>
+            <p class="bn" style="color: #888; margin-bottom: 25px;">কাজগুলো প্রতিদিন রাত ১২টায় রিসেট হবে।</p>
+            
+            <!-- UPDATED: Premium Compact Box with Rotating Red/Blue Border -->
+            <div class="premium-ad-card">
+                <i class="fas fa-play-circle ad-icon-small"></i>
+                <h3 class="bn" style="font-size: 1.1rem; margin-bottom: 4px;">ভিডিও দেখুন</h3>
+                
+                <div style="margin: 8px 0; display: flex; align-items: center; gap: 10px;">
+                    <span class="bn" style="color: #ccc; font-size: 0.8rem;">বাকি: <span id="adsLeft" style="color: white; font-weight: bold;">0</span> টি</span>
+                    <span class="bn" style="background: rgba(48,209,88,0.15); color: var(--success); padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">
+                        +৳ <span id="adRateDisplay">0.00</span>
+                    </span>
                 </div>
-                <div style="text-align: right;">
-                    <div class="task-reward">+৳ <span id="adRateDisplay">0.00</span></div>
-                    <button class="btn-main" style="padding: 6px 15px; font-size: 0.8rem; margin-top: 5px; width: auto;" onclick="watchAd()">দেখুন</button>
-                </div>
+
+                <button class="btn-main pulse-btn" style="padding: 10px 20px; font-size: 0.9rem; width: auto; margin-top: 5px;" onclick="watchAd()">
+                    <i class="fas fa-video"></i> ভিডিও শুরু করুন
+                </button>
             </div>
+            <!-- End Premium Box -->
+
             <div id="taskList" style="margin-top: 25px;"></div>
         </div>
 
@@ -463,22 +544,38 @@
             referralBonus: 5.00,
             adReward: 2.00,
             dailyAdLimit: 10,
-            botUsername: "AppleEarnBot", // Change this to your real bot username
-            adZoneId: "10312256", // Default Zone ID
+            botUsername: "AppleEarnBot", 
+            adZoneId: "10312256", 
             tasks: [
                 { id: 't1', title: 'টেলিগ্রাম চ্যানেলে জয়েন করুন', reward: 3.00, url: 'https://t.me/YourChannel', icon: 'fab fa-telegram' },
                 { id: 't2', title: 'ফেসবুক পেজ ফলো করুন', reward: 2.50, url: 'https://facebook.com', icon: 'fab fa-facebook' }
             ]
         };
 
+        // --- NEW: Loading Percentage Logic ---
+        function runLoader() {
+            let p = 0;
+            const el = document.getElementById('loadPercent');
+            const bar = document.getElementById('loadingBar');
+            const interval = setInterval(() => {
+                p += Math.floor(Math.random() * 5) + 1;
+                if(p > 100) p = 100;
+                el.innerText = p;
+                bar.style.width = p + '%';
+                if(p === 100) clearInterval(interval);
+            }, 50); // Speed of counter
+        }
+
         // --- INIT ---
         async function initApp() {
+            runLoader(); // Start Counter
+
             try {
                 // Fetch Config
                 const configSnap = await db.collection('config').doc('appConfig').get();
                 if(configSnap.exists) appConfig = { ...appConfig, ...configSnap.data() };
 
-                // Inject Ad Script Dynamically based on Admin Config
+                // Inject Ad Script
                 const script = document.createElement('script');
                 script.src = '//libtl.com/sdk.js';
                 script.dataset.zone = appConfig.adZoneId;
@@ -512,14 +609,12 @@
                         likes: 0,
                         adsWatchedToday: 0,
                         adDate: new Date().toDateString(),
-                        claimedTasksMap: {}, // Using Map for daily reset logic
+                        claimedTasksMap: {}, 
                         joinedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } else {
-                    // Update Name if changed
                     if(name !== doc.data().name) userRef.update({ name: name });
                     
-                    // Reset Daily Ad Limit if new day
                     const todayStr = new Date().toDateString();
                     if (doc.data().adDate !== todayStr) {
                          userRef.update({ adsWatchedToday: 0, adDate: todayStr });
@@ -529,17 +624,18 @@
                 userRef.onSnapshot(snap => {
                     userData = snap.data();
                     updateUI();
-                    renderTasks(); // Re-render tasks to check daily status
+                    renderTasks(); 
                 });
 
                 document.getElementById('noticeText').innerHTML = appConfig.notice;
                 document.getElementById('refBonusAmt').innerText = appConfig.referralBonus;
                 document.getElementById('adRateDisplay').innerText = appConfig.adReward;
                 
+                // Hide loader only after it hits 100% mostly
                 setTimeout(() => {
                     document.getElementById('appLoader').classList.remove('show');
                     document.getElementById('noticeModal').classList.add('show');
-                }, 1500);
+                }, 2000); // 2 seconds minimum for the loader to look good
 
             } catch (e) {
                 console.error(e);
@@ -564,11 +660,11 @@
             document.getElementById('taskIncome').innerText = formatMoney(userData.taskBalance);
             document.getElementById('refIncome').innerText = formatMoney(userData.referralBalance);
             
-            // Mini App Link
             const botLink = `https://t.me/${appConfig.botUsername}/app?startapp=${currentUser}`;
             document.getElementById('refLink').value = botLink;
             
-            document.getElementById('adsLeft').innerText = Math.max(0, appConfig.dailyAdLimit - (userData.adsWatchedToday || 0));
+            const left = Math.max(0, appConfig.dailyAdLimit - (userData.adsWatchedToday || 0));
+            document.getElementById('adsLeft').innerText = left;
             
             document.getElementById('wTaskBal').innerText = formatMoney(userData.taskBalance);
             document.getElementById('wRefBal').innerText = formatMoney(userData.referralBalance);
@@ -604,27 +700,21 @@
             }, 3000);
         }
 
-        // --- TASKS (Daily Reset Logic) ---
+        // --- TASKS ---
         function renderTasks() {
             const list = document.getElementById('taskList');
             list.innerHTML = "";
             
             const claimedMap = userData.claimedTasksMap || {}; 
-            // Fallback for old users who might have array instead of map
             const claimedArray = userData.claimedTasks || []; 
             const todayStr = new Date().toDateString();
 
             appConfig.tasks.forEach(task => {
-                // Check if claimed TODAY
                 let isClaimedToday = false;
                 
                 if (claimedMap[task.id] === todayStr) {
                     isClaimedToday = true;
                 } else if (claimedArray.includes(task.id) && !claimedMap[task.id]) {
-                    // Migration logic: if in old array, treat as claimed permanently unless migrated. 
-                    // For this logic, we assume old array means claimed previously. 
-                    // To force daily reset, we only respect the Map date. 
-                    // So if it's NOT in the map for today, it is NOT claimed.
                     isClaimedToday = false; 
                 }
 
@@ -667,14 +757,12 @@
                     const updateData = {
                         taskBalance: firebase.firestore.FieldValue.increment(reward),
                     };
-                    // Save task with today's date in a Map
                     updateData[`claimedTasksMap.${taskId}`] = todayStr;
 
                     await db.collection('users').doc(currentUser).update(updateData);
                     
                     localStorage.removeItem(`task_pending_${taskId}`);
                     showToast(`অভিনন্দন! আপনি ৳${reward} পেয়েছেন`, "success");
-                    // renderTasks will trigger automatically via onSnapshot
                 } catch(e) { 
                     console.error(e);
                     showToast("এরর হয়েছে। আবার চেষ্টা করুন।", "error"); 
@@ -683,35 +771,42 @@
             }, 3000);
         }
 
-        // --- AD SYSTEM (Dynamic Zone) ---
+        // --- AD SYSTEM ---
         let adInterval;
         function watchAd() {
             if((userData.adsWatchedToday || 0) >= appConfig.dailyAdLimit) return showToast("আজকের লিমিট শেষ!", "error");
             
-            // Trigger Ad based on Dynamic ID
             const adFuncName = 'show_' + appConfig.adZoneId;
             
-            // Check if SDK loaded
             if (typeof window[adFuncName] === 'function') {
                 window[adFuncName]().then(() => {
-                    // Ad shown successfully, show timer modal for reward
                     document.getElementById('adModal').classList.add('show');
-                    let timeLeft = 10;
+                    
+                    let timeLeft = 10; 
                     const timerEl = document.getElementById('adTimer');
                     timerEl.innerText = timeLeft;
+                    
+                    if(adInterval) clearInterval(adInterval);
+
                     adInterval = setInterval(() => {
                         timeLeft--;
                         timerEl.innerText = timeLeft;
-                        if(timeLeft <= 0) finishAd();
+                        
+                        if(timeLeft <= 0) {
+                            finishAd(); 
+                        }
                     }, 1000);
                 });
             } else {
                 showToast("বিজ্ঞাপন লোড হচ্ছে... একটু অপেক্ষা করুন", "error");
-                // Reload SDK if needed or just wait
             }
         }
 
-        function cancelAd() { clearInterval(adInterval); document.getElementById('adModal').classList.remove('show'); showToast("অ্যাড বাতিল করা হয়েছে।", "error"); }
+        function cancelAd() { 
+            clearInterval(adInterval); 
+            document.getElementById('adModal').classList.remove('show'); 
+            showToast("আপনি অ্যাড বন্ধ করে দিয়েছেন। কোনো টাকা দেওয়া হয়নি।", "error"); 
+        }
         
         async function finishAd() {
             clearInterval(adInterval);
@@ -729,7 +824,6 @@
         // --- WALLET ---
         function shareRef() {
             const url = document.getElementById('refLink').value;
-            // Using Telegram Share
             const text = encodeURIComponent("আমার সাথে অ্যাপল আর্নে কাজ করুন এবং প্রতিদিন টাকা আয় করুন! 👇");
             const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`;
             window.open(shareUrl);
@@ -752,7 +846,7 @@
             const amount = parseFloat(document.getElementById('wAmount').value);
             const number = document.getElementById('wNumber').value;
             const method = document.getElementById('wMethod').value;
-            const source = document.getElementById('wSource').value; // 'task' or 'ref'
+            const source = document.getElementById('wSource').value; 
 
             if (!amount || !number) return showToast("সব তথ্য পূরণ করুন", "error");
             
@@ -768,7 +862,6 @@
                 const batch = db.batch();
                 const userRef = db.collection('users').doc(currentUser);
                 
-                // Deduct based on source
                 if(source === 'task') {
                     batch.update(userRef, { taskBalance: firebase.firestore.FieldValue.increment(-amount) });
                 } else {
@@ -780,7 +873,7 @@
                     amount, 
                     method, 
                     account: number, 
-                    source: source, // Save which balance was used
+                    source: source, 
                     status: 'pending', 
                     date: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -905,4 +998,5 @@
     </script>
 </body>
 </html>
+
 
