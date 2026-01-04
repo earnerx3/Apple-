@@ -26,6 +26,7 @@
             --danger: #FF453A;
             --card-bg: #1C1C1E;
             --gold: #FFD700;
+            --warning: #FF9F0A;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -223,6 +224,24 @@
         }
         .dev-btn:hover { border-color: var(--primary); color: #fff; }
 
+        /* Warning Box Style */
+        .warning-box {
+            background: rgba(255, 159, 10, 0.1);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+            border-radius: 14px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .warning-header {
+            color: var(--warning);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
     </style>
 </head>
 <body>
@@ -252,6 +271,22 @@
             </div>
             <div class="notice-content bn" id="noticeText">লোডিং হচ্ছে...</div>
             <button class="btn-main" onclick="closeModal('noticeModal')">ঠিক আছে, বুঝেছি</button>
+        </div>
+    </div>
+
+    <div id="adModal" class="modal-overlay" style="backdrop-filter: blur(15px);">
+        <div class="modal-box" style="text-align: center; border: 2px solid var(--primary);">
+            <div style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2.5rem; font-weight: bold; background: rgba(0,0,0,0.5);">
+                <span id="adTimer" style="color: white;">--</span>
+            </div>
+            <h3 class="bn" style="font-size: 1.3rem;">বিজ্ঞাপন দেখা হচ্ছে...</h3>
+            <p class="bn" style="color: #ccc; margin-bottom: 25px; margin-top: 10px; font-size: 0.9rem;">
+                <i class="fas fa-clock" style="color: #FF9F0A;"></i> সম্পূর্ণ সময় অপেক্ষা করুন।<br>
+                তা না হলে <span style="color: #FF453A;">রিওয়ার্ড পাবেন না।</span>
+            </p>
+            <button class="btn-main" style="background: transparent; border: 1px solid #FF453A; color: #FF453A; padding: 12px;" onclick="cancelAd()">
+                <i class="fas fa-times"></i> বন্ধ করুন (No Reward)
+            </button>
         </div>
     </div>
 
@@ -364,6 +399,7 @@
                 <div class="tab-btn active bn" onclick="switchWalletTab('withdraw', this)">উইথড্র করুন</div>
                 <div class="tab-btn bn" onclick="switchWalletTab('history', this)">হিস্টোরি</div>
             </div>
+            
             <div id="withdrawTab">
                 <div class="glass" style="padding: 20px; margin-bottom: 20px;">
                     <small class="bn" style="color: #888;">উত্তোলনযোগ্য ব্যালেন্স</small>
@@ -372,6 +408,17 @@
                         <span class="bn" style="background:#333; padding:5px 10px; border-radius:5px; font-size:0.8rem;">রেফার: <span id="wRefBal">0</span>৳</span>
                     </div>
                 </div>
+
+                <div class="warning-box">
+                    <div class="warning-header">
+                        <i class="fas fa-exclamation-triangle"></i> উইথড্র শর্তাবলী
+                    </div>
+                    <ul class="bn" style="font-size: 0.85rem; color: #ccc; padding-left: 20px; margin: 0;">
+                        <li style="margin-bottom: 5px;">সর্বনিম্ন উইথড্র: <span style="color: white; font-weight:bold;">৳ <span id="ruleMinAmt">50</span></span></li>
+                        <li>মিনিমাম রেফার লাগবে: <span style="color: white; font-weight:bold;"><span id="ruleMinRef">0</span> টি</span> (আপনার আছে: <span id="userCurrentRef" style="color: #30D158;">0</span>)</li>
+                    </ul>
+                </div>
+
                 <div class="glass" style="padding: 20px;">
                     <div style="margin-bottom: 15px;">
                         <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">কোন ব্যালেন্স থেকে নিবেন?</label>
@@ -399,6 +446,7 @@
                     <button class="btn-main" onclick="submitWithdraw()">টাকা উত্তোলন করুন</button>
                 </div>
             </div>
+            
             <div id="historyTab" style="display: none;">
                 <div class="glass" id="historyList" style="min-height: 200px;"></div>
             </div>
@@ -475,19 +523,23 @@
 
         let currentUser = null;
         let userData = {};
+        
+        // --- UPDATED APP CONFIG ---
         let appConfig = {
             notice: "স্বাগতম! আমাদের নতুন অ্যাপে কাজ করুন এবং পেমেন্ট নিন।",
             referralBonus: 5.00,
             adReward: 2.00,
             dailyAdLimit: 10,
-            botUsername: "Apple_Earn_Incomebd_bot", 
+            botUsername: "PromptHub1_Bot",
             adZoneId: "10312256", 
+            minWithdraw: 50, // Default Minimum Amount
+            minReferrals: 0, // Default Referral Requirement
             tasks: [],
             supportLinks: [
-                { title: 'সাপোর্ট গ্রুপ', url: 'https://t.me/+W9u5nbxRn7lmMmY1', icon: 'fab fa-telegram-plane', color: '#0088cc' },
-                { title: 'চ্যানেল', url: 'https://t.me/APPLEEARN_OFFICIALCHANNEL', icon: 'fas fa-bullhorn', color: '#FF9F0A' },
-                { title: 'প্রাইভেসি পলিসি', url: 'https://t.me/Apple_income_help', icon: 'fas fa-shield-alt', color: '#30D158' },
-                { title: 'অ্যাডমিন', url: 'https://t.me/Apple_income_help', icon: 'fas fa-user-shield', color: '#FF3B30' }
+                { title: 'সাপোর্ট গ্রুপ', url: 'https://t.me/YourSupport', icon: 'fab fa-telegram-plane', color: '#0088cc' },
+                { title: 'চ্যানেল', url: 'https://t.me/YourChannel', icon: 'fas fa-bullhorn', color: '#FF9F0A' },
+                { title: 'প্রাইভেসি পলিসি', url: 'https://google.com', icon: 'fas fa-shield-alt', color: '#30D158' },
+                { title: 'অ্যাডমিন', url: 'https://t.me/YourAdmin', icon: 'fas fa-user-shield', color: '#FF3B30' }
             ]
         };
 
@@ -510,8 +562,16 @@
             runLoader();
 
             try {
+                // Fetch Config from Firestore
                 const configSnap = await db.collection('config').doc('appConfig').get();
-                if(configSnap.exists) appConfig = { ...appConfig, ...configSnap.data() };
+                if(configSnap.exists) {
+                    const data = configSnap.data();
+                    appConfig = { ...appConfig, ...data };
+                    
+                    // Fallback Defaults if missing in DB
+                    if(!appConfig.minWithdraw) appConfig.minWithdraw = 50;
+                    if(!appConfig.minReferrals) appConfig.minReferrals = 0;
+                }
                 
                 renderSupportLinks(); 
 
@@ -626,6 +686,20 @@
             
             document.getElementById('wTaskBal').innerText = formatMoney(userData.taskBalance);
             document.getElementById('wRefBal').innerText = formatMoney(userData.referralBalance);
+
+            // --- UPDATE WITHDRAW RULES UI ---
+            document.getElementById('ruleMinAmt').innerText = appConfig.minWithdraw;
+            document.getElementById('ruleMinRef').innerText = appConfig.minReferrals;
+            document.getElementById('userCurrentRef').innerText = userData.referralCount || 0;
+            
+            // Color code the referral count
+            const refCountEl = document.getElementById('userCurrentRef');
+            if((userData.referralCount || 0) >= appConfig.minReferrals) {
+                refCountEl.style.color = '#30D158'; // Green
+                refCountEl.innerHTML += ' <i class="fas fa-check-circle"></i>';
+            } else {
+                refCountEl.style.color = '#FF453A'; // Red
+            }
         }
 
         function renderSupportLinks() {
@@ -678,7 +752,7 @@
             }, 3000);
         }
 
-        // --- TASKS SYSTEM (FIXED) ---
+        // --- TASKS ---
         function renderTasks() {
             const list = document.getElementById('taskList');
             list.innerHTML = "";
@@ -691,7 +765,6 @@
             }
 
             appConfig.tasks.forEach(task => {
-                // Check specific task ID in the map
                 let isClaimedToday = (claimedMap[task.id] === todayStr);
                 const isPending = localStorage.getItem(`task_pending_${task.id}`);
                 let btnHtml = '';
@@ -728,7 +801,6 @@
                 try {
                     const todayStr = new Date().toDateString();
                     const updateData = { taskBalance: firebase.firestore.FieldValue.increment(reward) };
-                    // Update only this specific Task ID
                     updateData[`claimedTasksMap.${taskId}`] = todayStr;
                     await db.collection('users').doc(currentUser).update(updateData);
                     localStorage.removeItem(`task_pending_${taskId}`);
@@ -740,43 +812,58 @@
             }, 3000);
         }
 
-        // --- AD SYSTEM (STRICT & NO TIMER) ---
-        function watchAd() {
-            if((userData.adsWatchedToday || 0) >= appConfig.dailyAdLimit) {
-                return showToast("আজকের লিমিট শেষ!", "error");
-            }
-            
-            showToast("বিজ্ঞাপন লোড হচ্ছে...", "info");
+        // --- AD SYSTEM ---
+        let adInterval;
+        let adRewardPending = false;
 
-            const adFuncName = 'show_' + appConfig.adZoneId;
+        function watchAd() {
+            if((userData.adsWatchedToday || 0) >= appConfig.dailyAdLimit) return showToast("আজকের লিমিট শেষ!", "error");
             
+            const adFuncName = 'show_' + appConfig.adZoneId;
             if (typeof window[adFuncName] === 'function') {
-                // Strict Promise-based Logic
                 window[adFuncName]().then(() => {
-                    // Success: User watched ad till end
-                    giveAdReward();
-                }).catch((e) => {
-                    // Error: User closed, skipped, or network fail
-                    console.log(e);
-                    showToast("Task Failed! পুরো ভিডিও না দেখলে টাকা পাবেন না।", "error");
+                    adRewardPending = true;
+                    document.getElementById('adModal').classList.add('show');
+                    
+                    let timeLeft = 10; 
+                    const timerEl = document.getElementById('adTimer');
+                    timerEl.innerText = timeLeft;
+                    
+                    if(adInterval) clearInterval(adInterval);
+
+                    adInterval = setInterval(() => {
+                        timeLeft--;
+                        timerEl.innerText = timeLeft;
+                        if(timeLeft <= 0) {
+                            finishAd(); 
+                        }
+                    }, 1000);
                 });
             } else {
-                showToast("বিজ্ঞাপন প্রস্তুত নয়। একটু পরে চেষ্টা করুন।", "error");
+                showToast("বিজ্ঞাপন লোড হচ্ছে... একটু অপেক্ষা করুন", "error");
             }
         }
 
-        async function giveAdReward() {
+        function cancelAd() { 
+            clearInterval(adInterval); 
+            adRewardPending = false;
+            document.getElementById('adModal').classList.remove('show'); 
+            showToast("সময় শেষ হওয়ার আগে বন্ধ করায় রিওয়ার্ড দেওয়া হলো না।", "error"); 
+        }
+        
+        async function finishAd() {
+            if(!adRewardPending) return;
+            clearInterval(adInterval);
+            document.getElementById('adModal').classList.remove('show');
             try {
                 await db.collection('users').doc(currentUser).update({
                     taskBalance: firebase.firestore.FieldValue.increment(appConfig.adReward),
                     adsWatchedToday: firebase.firestore.FieldValue.increment(1),
                     adDate: new Date().toDateString()
                 });
-                showToast(`অভিনন্দন! +৳${appConfig.adReward} যুক্ত হয়েছে।`, "success");
-            } catch(e) { 
-                console.error(e);
-                showToast("নেটওয়ার্ক এরর! ব্যালেন্স যোগ হয়নি।", "error"); 
-            }
+                showToast(`সফল! +৳${appConfig.adReward} যুক্ত হয়েছে।`, "success");
+            } catch(e) { showToast("নেটওয়ার্ক এরর!", "error"); }
+            adRewardPending = false;
         }
 
         // --- WALLET ---
@@ -801,15 +888,30 @@
             if(tab === 'history') loadWithdrawHistory();
         }
 
+        // --- UPDATED SUBMIT WITHDRAW ---
         async function submitWithdraw() {
             const amount = parseFloat(document.getElementById('wAmount').value);
             const number = document.getElementById('wNumber').value;
             const method = document.getElementById('wMethod').value;
             const source = document.getElementById('wSource').value; 
 
+            // Basic Validations
             if (!amount || !number) return showToast("সব তথ্য পূরণ করুন", "error");
+            
+            // DYNAMIC CHECK: Minimum Amount
+            const minAmt = appConfig.minWithdraw || 50;
+            if (amount < minAmt) return showToast(`সর্বনিম্ন উইথড্র ${minAmt} টাকা`, "error");
+
+            // DYNAMIC CHECK: Minimum Referral Requirement
+            const requiredRefs = appConfig.minReferrals || 0;
+            const userRefs = userData.referralCount || 0;
+            
+            if (userRefs < requiredRefs) {
+                const needed = requiredRefs - userRefs;
+                return showToast(`উইথড্র করতে আরো ${needed} টি রেফার প্রয়োজন! (লাগবে ${requiredRefs} টি)`, "error");
+            }
+
             const currentBal = source === 'task' ? (userData.taskBalance || 0) : (userData.referralBalance || 0);
-            if (amount < 50) return showToast("সর্বনিম্ন উইথড্র ৫০ টাকা", "error");
             if (amount > currentBal) return showToast("আপনার পর্যাপ্ত ব্যালেন্স নেই!", "error");
             if (number.length < 11) return showToast("সঠিক নাম্বার দিন", "error");
 
