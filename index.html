@@ -429,7 +429,25 @@
                         <label class="bn" style="display: block; margin-bottom: 8px; font-size: 0.9rem;">মোবাইল নাম্বার</label>
                         <input type="number" id="wNumber" placeholder="017xxxxxxxx" class="form-control">
                     </div>
-                    <button class="btn-main" onclick="submitWithdraw()">টাকা উত্তোলন করুন</button>
+
+                    <!-- NEW: Verification Section (Hidden by Default) -->
+                    <div id="verifySection" style="display: none; margin-bottom: 20px; text-align: center;">
+                        <div class="warning-box" style="background: rgba(0, 122, 255, 0.1); border: 1px solid #007AFF;">
+                            <div class="warning-header" style="color: #007AFF; justify-content: center;">
+                                <i class="fas fa-shield-alt"></i> ভেরিফিকেশন প্রয়োজন
+                            </div>
+                            <p class="bn" style="font-size: 0.8rem; color: #ccc; margin-bottom: 10px;">
+                                রেফার পেমেন্ট পাওয়ার জন্য যাচাইকরণ প্রয়োজন।
+                                <br>
+                                (<span id="verifyCountDisplay">0</span>/<span id="verifyTargetDisplay">1</span>) সম্পন্ন হয়েছে
+                            </p>
+                            <button id="btnVerifyAction" class="btn-main" onclick="clickVerify()" style="background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%);">
+                                <i class="fas fa-external-link-alt"></i> <span id="btnVerifyText">ভেরিফাই করুন</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="btnWithdrawSubmit" class="btn-main" onclick="submitWithdraw()">টাকা উত্তোলন করুন</button>
                 </div>
             </div>
             
@@ -503,8 +521,7 @@
         let currentUser = null;
         let userData = {};
         
-        // --- OPTIMIZED CACHE CONFIG ---
-        // Defaults if cache/fetch fails
+        // --- UPDATED CONFIG ---
         let appConfig = {
             notice: "স্বাগতম! আমাদের নতুন অ্যাপে কাজ করুন এবং পেমেন্ট নিন।",
             referralBonus: 5.00,
@@ -515,6 +532,13 @@
             withdrawRules: {
                 task: { minAmount: 50, minRefs: 0 }, 
                 ref: { minAmount: 100, minRefs: 5 }
+            },
+            // NEW VERIFICATION CONFIG (Admin can override this from DB)
+            verification: {
+                enabled: true,         // Toggle on/off
+                link: "https://google.com", // The ad link
+                requiredClicks: 2,     // How many clicks needed to unlock withdraw
+                btnText: "Verify Reward 🚀" 
             },
             tasks: [],
             supportLinks: [
@@ -534,6 +558,9 @@
         const LB_CACHE_TIME = 'lb_time_cache';
         const LB_TTL = 15 * 60 * 1000; // 15 Minutes
 
+        // New Variable for User Verification Tracking
+        let userVerifyClicks = 0; 
+
         // --- Loader ---
         function runLoader() {
             let p = 0;
@@ -548,14 +575,13 @@
             }, 50);
         }
 
-        // --- OPTIMIZATION 1: Fetch Config with Caching ---
+        // --- OPTIMIZED 1: Fetch Config with Caching ---
         async function fetchAppConfig() {
             try {
                 const cached = localStorage.getItem(CONFIG_CACHE_KEY);
                 const timestamp = localStorage.getItem(CONFIG_CACHE_TIME);
                 const now = Date.now();
 
-                // If cache exists and is fresh (less than 60 mins)
                 if (cached && timestamp && (now - timestamp < CONFIG_TTL)) {
                     console.log("Using Cached Config");
                     const data = JSON.parse(cached);
@@ -622,7 +648,7 @@
                 }
                 currentUser = uid;
 
-                // 3. User Data - OPTIMIZATION: REMOVED onSnapshot
+                // 3. User Data
                 const userRef = db.collection('users').doc(uid);
                 const doc = await userRef.get();
 
@@ -644,7 +670,7 @@
                     };
 
                     await userRef.set(newUserObj);
-                    userData = newUserObj; // Set local state directly
+                    userData = newUserObj;
 
                     // Handle Referral Bonus
                     if (startParam && startParam.startsWith('ref_')) {
@@ -664,7 +690,6 @@
                     // Existing User
                     userData = doc.data();
                     
-                    // Update name/photo if changed (Silent update)
                     if(name !== userData.name) {
                         userRef.update({ name: name }); 
                         userData.name = name;
@@ -723,6 +748,7 @@
             updateWithdrawRulesUI();
         }
 
+        // --- MODIFIED: Handle Verification UI Logic ---
         function updateWithdrawRulesUI() {
             const source = document.getElementById('wSource').value;
             const rules = appConfig.withdrawRules[source] || { minAmount: 50, minRefs: 0 };
@@ -741,6 +767,69 @@
             } else {
                 refCountEl.style.color = '#FF453A'; 
             }
+
+            // --- VERIFICATION TOGGLE ---
+            const verifySection = document.getElementById('verifySection');
+            const withdrawBtn = document.getElementById('btnWithdrawSubmit');
+            const vConfig = appConfig.verification || {};
+            
+            // Only apply verify logic if: Source is Referral AND Verification is Enabled
+            if (source === 'ref' && vConfig.enabled === true) {
+                const required = vConfig.requiredClicks || 1;
+                
+                document.getElementById('verifyTargetDisplay').innerText = required;
+                document.getElementById('btnVerifyText').innerText = vConfig.btnText || "Verify";
+
+                if (userVerifyClicks >= required) {
+                    // Unlock Withdraw
+                    verifySection.style.display = 'none';
+                    withdrawBtn.style.display = 'block';
+                } else {
+                    // Lock Withdraw, Show Verify
+                    verifySection.style.display = 'block';
+                    withdrawBtn.style.display = 'none';
+                    document.getElementById('verifyCountDisplay').innerText = userVerifyClicks;
+                }
+            } else {
+                // Task Balance or Verification Disabled -> Show Withdraw Directly
+                verifySection.style.display = 'none';
+                withdrawBtn.style.display = 'block';
+            }
+        }
+
+        // --- NEW: Handle Verification Click ---
+        function clickVerify() {
+            const vConfig = appConfig.verification || {};
+            const link = vConfig.link || "https://google.com"; 
+
+            // Increment Click
+            userVerifyClicks++;
+            
+            // UI Feedback
+            const btn = document.getElementById('btnVerifyAction');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<div class="loader-spin"></div> Checking...';
+            btn.disabled = true;
+
+            // Open Link
+            window.open(link, '_blank');
+            showToast("যাচাই করা হচ্ছে... দয়া করে অপেক্ষা করুন।", "info");
+
+            // Re-check after delay
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                
+                if(userVerifyClicks >= (vConfig.requiredClicks || 1)) {
+                    showToast("যাচাইকরণ সফল! এখন উইথড্র করতে পারবেন।", "success");
+                    if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                } else {
+                    const left = (vConfig.requiredClicks || 1) - userVerifyClicks;
+                    showToast(`আরও ${left} বার ক্লিক প্রয়োজন।`, "warning");
+                }
+                
+                updateWithdrawRulesUI();
+            }, 4000); // 4 seconds delay to simulate check
         }
 
         function renderSupportLinks() {
